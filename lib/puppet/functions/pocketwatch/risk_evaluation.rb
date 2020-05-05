@@ -1,4 +1,4 @@
-Puppet::Functions.create_function(:'pocketwatch::noop_unless_risk_permitted') do
+Puppet::Functions.create_function(:'pocketwatch::risk_evaluation') do
   dispatch :noop_class_interface do
     param 'Enum[unknown,low,medium,high]', :risk
     return_type 'Boolean'
