@@ -19,29 +19,19 @@ Puppet::Functions.create_function(:'pocketwatch::noop_unless_risk_permitted') do
     if !should_noop?(risk)
       block.call
     else
+      # Create a new scope, call noop() inside that scope, and then evaluate
+      # the code block in that scope.
       scope = block.closure.enclosing_scope
       newscope = scope.newscope(:source => scope, :resource => scope.resource)
       newscope.call_function('noop', true)
       block.closure.call_by_name_with_scope(newscope, {}, false)
-      true
     end
   end
 
-  # Equivalent to the following Puppet code:
-  #
-  #   function pocketwatch::noop_unless_risk_permitted(
-  #     Enum[unknown,low,medium,high] $risk,
-  #   ) {
-  #     include pocketwatch
-  #
-  #     # Return the inverse of permitted (permitted == true / noop == false). If
-  #     # pocketwatch has not returned this data, fail the catalog.
-  #     !(getvar("pocketwatch::data.permitted.${risk}") |$error| {
-  #       fail('Pocketwatch data unavailable')
-  #     })
-  #   }
-  #
   def should_noop?(risk)
+    # If the user passed --no-noop on the command line, don't no-op.
+    return false if (call_function('getvar', 'facts.noop_cli_value') == false)
+
     call_function('include', 'pocketwatch')
     permitted = call_function('getvar', "pocketwatch::data.permitted.#{risk}") do |err|
       call_function('fail', 'Pocketwatch data unavailable')
