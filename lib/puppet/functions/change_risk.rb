@@ -61,12 +61,15 @@ Puppet::Functions.create_function(:'change_risk', Puppet::Functions::InternalFun
   class ResourceDelegator < SimpleDelegator
     def initialize(obj, risk)
       super(obj)
-
       @risk = risk
     end
 
     def tags
       super.delete_if { |t| t =~ /change_risk:/ } << "change_risk:#{@risk}"
+    end
+
+    def merge_into(tag_set)
+      tag_set.merge(tags)
     end
   end
 end
