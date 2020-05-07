@@ -1,17 +1,16 @@
 class change_risk (
-  # $risk_permitted should be set to a hash such as the following:
+  # $permitted_risk should be set to a hash such as the following:
   #
   # { 'high'    => false,
   #   'medium'  => true,
   #   'low'     => true,
   #   'unknown' => true }
   #
-  Hash[String, Boolean] $risk_permitted        = {},
-  Enum[fail,op,noop]    $not_found_behavior    = 'fail',
-  Boolean               $noop_unless_permitted = true,
-  Boolean               $tag_change_risk       = true,
-  Boolean               $implement_class_noop  = true,
-  Enum[flag,fact,both]  $disable_mechanism     = 'flag',
+  Hash[String, Variant[Enum['true','false'], Boolean]] $permitted_risk = {},
+  Enum[fail,none,noop]  $risk_not_found_action        = 'fail',
+  Boolean               $ignore_permitted_risk        = false,
+  Boolean               $respect_noop_class_interface = true,
+  Enum[flag,fact,both]  $disable_mechanism            = 'flag',
 ) {
   # This class is a namespace for change_risk configuration information.
   # That is all.

@@ -13,7 +13,7 @@ This module provides Puppet code patterns and constructs that let developers dec
 For testing or semi-permanent configuration, this can just be done in Hiera yaml.
 
 ```yaml
-change_risk::risk_permitted:
+change_risk::permitted_risk:
   high:    false,
   medium:  true,
   low:     true,
@@ -63,12 +63,12 @@ puppet query 'resources { certname = "my-node" and tags = "change_risk:high" }'
 
 The behavior of change\_risk code constructs is controlled through a configuration class. The configuration can be set by declaring the class resource-style in site.pp, or by configuring it via Hiera.
 
-In the examples below the risk tolerance data shown is static. In a real-world scenario, the `$risk_permitted` configuration parameter could be supplied dynamically using either a Puppet function call to query a service such as Arbiter, or by querying Arbiter data using a `trusted_external_command` integration.
+In the examples below the risk tolerance data shown is static. In a real-world scenario, the `$permitted_risk` configuration parameter could be supplied dynamically using either a Puppet function call to query a service such as Arbiter, or by querying Arbiter data using a `trusted_external_command` integration.
 
 **hiera data:**
 
 ```yaml
-change_risk::risk_permitted:
+change_risk::permitted_risk:
   high:    false,
   medium:  true,
   low:     true,
@@ -86,7 +86,7 @@ change_risk::implement_class_noop: true
 class { 'change_risk':
   # The matrix of risk levels that have been defined, and whether or not
   # changes of that risk level are permitted
-  $risk_permitted => {
+  $permitted_risk => {
     'high'    => false,
     'medium'  => true,
     'low'     => true,
@@ -113,10 +113,10 @@ class { 'change_risk':
 ```
 
 
-If change risk data is coming from Arbiter via `trusted_external_command`, the `$risk_permitted` parameter might be set in Hiera as follows.
+If change risk data is coming from Arbiter via `trusted_external_command`, the `$permitted_risk` parameter might be set in Hiera as follows.
 
 ```yaml
-change_risk::risk_permitted: "%{trusted.external.arbiter.risk_permitted}"
+change_risk::permitted_risk: "%{trusted.external.arbiter.permitted_risk}"
 ```
 
 ## Usage in Code

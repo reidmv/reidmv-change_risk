@@ -1,0 +1,7 @@
+---
+# Configure each risk level to be set by fact, for convenience in testing
+change_risk::permitted_risk:
+  test:             "%{facts.permit_test}"
+  block:            "%{facts.permit_block}"
+  inner:            "%{facts.permit_inner}"
+  block_inner_diff: "%{facts.permit_block_inner_diff}"

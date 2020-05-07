@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require 'delegate'
+require 'puppet/coercion'
 
 Puppet::Functions.create_function(:'change_risk', Puppet::Functions::InternalFunction) do
   dispatch :class_function do
@@ -25,11 +26,11 @@ Puppet::Functions.create_function(:'change_risk', Puppet::Functions::InternalFun
     # If the user passed --no-noop on the command line, don't no-op.
     return true if (call_function('getvar', 'facts.noop_cli_value') == false)
 
-    permitted = call_function('getvar', "change_risk::risk_permitted.#{risk}") do |err|
+    permitted = call_function('getvar', "change_risk::permitted_risk.#{risk}") do |err|
       call_function('fail', "Risk permitted data unavailable for risk '#{risk}'")
     end
 
-    permitted
+    Puppet::Coercion.boolean(permitted)
   end
 
   def class_function(scope, risk)
