@@ -59,13 +59,13 @@ PQL queries can return information about resources in node catalogs and their as
 puppet query 'resources { certname = "my-node" and tags = "change_risk:high" }'
 ```
 
-## Configuration
+## Setup
 
-The behavior of change\_risk code constructs is controlled through a configuration class. The configuration can be set by declaring the class resource-style in site.pp, or by configuring it via Hiera.
+The behavior of the change\_risk function is controlled through a configuration class. The configuration can be set by providing the appropriate settings using Hiera data (preferred), or by declaring the class resource-style in site.pp (only recommended for testing purposes).
 
 In the examples below the risk tolerance data shown is static. In a real-world scenario, the `$permitted_risk` configuration parameter could be supplied dynamically using either a Puppet function call to query a service such as Arbiter, or by querying Arbiter data using a `trusted_external_command` integration.
 
-**hiera data:**
+### Hiera Data Example
 
 ```yaml
 change_risk::permitted_risk:
@@ -74,52 +74,62 @@ change_risk::permitted_risk:
   low:     true,
   unknown: true,
 
-change_risk::not_found_behavior: fail
-change_risk::noop_unless_permitted: true
-change_risk::tag_change_risk: true
-change_risk::implement_class_noop: true
+change_risk::risk_not_found_action: fail
+change_risk::ignore_permitted_risk: false
+change_risk::disable_mechanism: flag
+change_risk::respect_noop_class_interface: true
 ```
 
-**site.pp:**
+The only required parameter is `change_risk::permitted_risk`. The remaining parameters have acceptable defaults. For more information on each of these parameters and what they affect, see the [Reference](#reference) section.
+
+### Using With External Data Sources
+
+If change risk data is coming from a system like Arbiter, it can be consumed in Puppet either by:
+
+* Using the `trusted_external_command` feature
+* Supplying the data through an ENC, as a top-scope variable
+* Supplying the data through a custom function, and saving it to a top-scope variable in site.pp
+
+#### trusted\_external\_command
+
+The trusted\_external\_command feature allows a script to be run to query data from an external source, and make it available to Puppet in the `$trusted` variable. Specifically, data will be available under `trusted.external`.
+
+Assuming that the full path to the data to use for `change_risk::permitted_risk` is `trusted.external.arbiter.permitted_risk`, set the following key in your Hiera data to configure change\_risk appropriately.
+
+```yaml
+change_risk::permitted_risk: "%{trusted.external.arbiter.permitted_risk}"
+```
+
+#### Top-scope Variables
+
+A variable can be set in top-scope and used similarly to the way the built-in `$trusted` variable is. If an ENC supplies the top-scope variable, it may be used directly. If the variable will be assigned a value based on calling a Puppet function, it must be set and called in site.pp, before any resources or classes are evaluated.
+
+```puppet
+$arbiter = arbiter::fetch_data(getvar('trusted.certname'))
+```
+
+Assuming you have a top-scope variable called `$arbiter` and it contains a hash key `permitted_risk`, you can configure change\_risk to use it by setting a Hiera key as follows.
+
+```yaml
+change_risk::permitted_risk: "%{arbiter.permitted_risk}"
+```
+
+### Site.pp Example
+
+The change\_risk class can be declared directly to supply the necessary configuration data. This is method of configuring change\_risk is recommended only for testing purposes.
 
 ```puppet
 class { 'change_risk':
-  # The matrix of risk levels that have been defined, and whether or not
-  # changes of that risk level are permitted
   $permitted_risk => {
     'high'    => false,
     'medium'  => true,
     'low'     => true,
     'unknown' => true,
   },
-
-  # Default. options include: fail, op, noop
-  not_found_behavior    => 'fail',
-
-  # Default. whether or not to no-op affected resources if risk is not
-  # permitted
-  noop_unless_permitted => true,
-
-  # Default. whether or not to tag resources with their change risk
-  tag_change_risk       => true,
-
-  # Default. whether or not to honor a $class_noop parameter
-  implement_class_noop  => true,
-
-  # Default. How to disable change_risk() checks for on-demand runs. Valid
-  # values include: flag, fact, both
-  disable_mechanism     => 'flag',
 }
 ```
 
-
-If change risk data is coming from Arbiter via `trusted_external_command`, the `$permitted_risk` parameter might be set in Hiera as follows.
-
-```yaml
-change_risk::permitted_risk: "%{trusted.external.arbiter.permitted_risk}"
-```
-
-## Usage in Code
+## Usage
 
 The method by which configuration elements are disabled in this pattern is by being switched to no-op. The [trlinkin-noop](https://forge.puppet.com/trlinkin/noop) module is used to do this.
 
@@ -244,7 +254,7 @@ class profile::postfix (
 
 ## Operation
 
-A normal Puppet agent run will use `change_risk::change_permitted` information to automatically no-op classes and code blocks based on permitted risk. When performing manual Puppet agent runs, there are several mechanisms available to override the automatic no-op decisions.
+A normal Puppet agent run will use `change_risk::permitted_risk` information to automatically no-op classes and code blocks based on permitted risk. When performing manual Puppet agent runs, there are several mechanisms available to override the automatic no-op decisions.
 
 ### Hiera Data
 
