@@ -6,13 +6,81 @@ Let "Arbiter" be a service that provides change risk assessment information for 
 
 This module provides Puppet code patterns and constructs that let developers declare their code with change risk information. The constructs will allow Puppet to selectively and automatically tag and/or no-op configuration elements according to the current change risk tolerance permitted by Arbiter.
 
+## Basic Usage
+
+### Step 1: configure permissible change risk levels
+
+For testing or semi-permanent configuration, this can just be done in Hiera yaml.
+
+```yaml
+change_risk::risk_permitted:
+  high:    false,
+  medium:  true,
+  low:     true,
+  unknown: true,
+```
+
+### Step 2: use `change_risk()` in code
+
+To mark a class with an assessed change risk, call the `change_risk()` function at the top of the class.
+
+```puppet
+class profile::dangerous {
+  change_risk('high')
+
+  # ...
+}
+```
+
+To mark a non-class block of code with an assessed change risk, call the `change_risk()` function with a block.
+
+```puppet
+change_risk('medium') || {
+  file { '/etc/postfix/main.cf':
+    source => 'puppet:///modules/postfix/main.cf',
+  }
+
+  service { 'postfix':
+    ensure    => running,
+    subscribe => File['/etc/postfix/main.cf'],
+  }
+}
+```
+
+### Step 3: run Puppet
+
+When Puppet runs it will no-op resources that have a change-risk level which is not currently permitted. Resources that don't have an assessed change-risk level, or with a permitted change-risk level will be applied in op mode.
+
+### Step 4: use change-risk information in reporting
+
+PQL queries can return information about resources in node catalogs and their assessed change-risk levels. Resources will have been tagged with a tag of the form "change\_risk:\<level\>". E.g. "change\_risk:high" or "change\_risk:low".
+
+```shell
+puppet query 'resources { certname = "my-node" and tags = "change_risk:high" }'
+```
+
 ## Configuration
 
 The behavior of change\_risk code constructs is controlled through a configuration class. The configuration can be set by declaring the class resource-style in site.pp, or by configuring it via Hiera.
 
 In the examples below the risk tolerance data shown is static. In a real-world scenario, the `$risk_permitted` configuration parameter could be supplied dynamically using either a Puppet function call to query a service such as Arbiter, or by querying Arbiter data using a `trusted_external_command` integration.
 
-*site.pp:*
+**hiera data:**
+
+```yaml
+change_risk::risk_permitted:
+  high:    false,
+  medium:  true,
+  low:     true,
+  unknown: true,
+
+change_risk::not_found_behavior: fail
+change_risk::noop_unless_permitted: true
+change_risk::tag_change_risk: true
+change_risk::implement_class_noop: true
+```
+
+**site.pp:**
 
 ```puppet
 class { 'change_risk':
@@ -44,20 +112,6 @@ class { 'change_risk':
 }
 ```
 
-*hiera data:*
-
-```yaml
-change_risk::risk_permitted:
-  high:    false,
-  medium:  true,
-  low:     true,
-  unknown: true,
-
-change_risk::not_found_behavior: fail
-change_risk::noop_unless_permitted: true
-change_risk::tag_change_risk: true
-change_risk::implement_class_noop: true
-```
 
 If change risk data is coming from Arbiter via `trusted_external_command`, the `$risk_permitted` parameter might be set in Hiera as follows.
 
