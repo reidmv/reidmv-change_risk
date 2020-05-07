@@ -200,14 +200,9 @@ class profile::postfix (
 }
 ```
 
-### Risk Evaluation block
-
-
 ### In Combination
 
 The change risk class function and block forms can be used together, if needed. The following example shows a class implemented with the `change_risk()` function called at the class level, but also containing a code block of resources with a different risk level specified.
-
-When using the two patterns together it is recommended that nested blocks should only ever _raise_ the risk level. A low-risk class may contain some high-risk changes. The reverse risk relation is not supported.
 
 The following example demonstrates using the class function call together with a nested change risk block.
 
