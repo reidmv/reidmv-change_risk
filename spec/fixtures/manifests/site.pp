@@ -1,0 +1,3 @@
+node 'testnode' {
+  include test
+}
