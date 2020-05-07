@@ -14,6 +14,23 @@ Puppet::Functions.create_function(:'change_risk', Puppet::Functions::InternalFun
     return_type 'Enum[op,noop]'
   end
 
+  # Return whether or not a given change risk level is currently permitted.
+  # This is common logic used by #class_function and #with_block to decide
+  # whether or not to force their resources into noop mode.
+  def change_permitted?(risk)
+    # Ensure config is loaded
+    call_function('include', 'change_risk')
+
+    # If the user passed --no-noop on the command line, don't no-op.
+    return true if (call_function('getvar', 'facts.noop_cli_value') == false)
+
+    permitted = call_function('getvar', "change_risk::risk_permitted.#{risk}") do |err|
+      call_function('fail', "Risk permitted data unavailable for risk '#{risk}'")
+    end
+
+    permitted
+  end
+
   def class_function(scope, risk)
     newtags = scope.resource.tags.delete_if { |t| t =~ /change_risk:/ }
     scope.resource.tags = newtags << "change_risk:#{risk}"
@@ -48,20 +65,6 @@ Puppet::Functions.create_function(:'change_risk', Puppet::Functions::InternalFun
       newscope.call_function('noop', true)
       'noop'
     end
-  end
-
-  def change_permitted?(risk)
-    # Ensure config is loaded
-    call_function('include', 'change_risk')
-
-    # If the user passed --no-noop on the command line, don't no-op.
-    return true if (call_function('getvar', 'facts.noop_cli_value') == false)
-
-    permitted = call_function('getvar', "change_risk::risk_permitted.#{risk}") do |err|
-      call_function('fail', "Risk permitted data unavailable for risk '#{risk}'")
-    end
-
-    permitted
   end
 
   class ResourceDelegator < SimpleDelegator
