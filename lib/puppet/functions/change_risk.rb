@@ -21,25 +21,31 @@ Puppet::Functions.create_function(:'change_risk', Puppet::Functions::InternalFun
     if change_permitted?(risk)
       'op'
     else
-      call_function('noop')
+      scope.call_function('noop', true)
       'noop'
     end
   end
 
   def with_block(scope, risk, &block)
-    # TODO: validate block
+    # Create a new scope to evalutate the block in. The new scope will be
+    # used to contain the effects of a call to noop() inside that scope, if
+    # needed, and also to cheat a little to add a tag to all resources
+    # contained in the block, and any child-scope blocks that might get
+    # included.
+    #
+    # To reset the change_risk tag from a parent scope and ensure the desired
+    # change_risk tag is propogated, the new scope is spiked with a Delegator
+    # resource which overrides the #tag and #merge_into methods of the source
+    # resource, thus getting what we want and avoiding the need to insert a
+    # whole new class to contain the resources.
+    resource = ResourceDelegator.new(scope.resource, risk)
+    newscope = scope.newscope(:source => scope.source, :resource => resource)
+    block.closure.call_by_name_with_scope(newscope, {}, false)
 
     if change_permitted?(risk)
-      block.call
       'op'
     else
-      # Create a new scope to evalutate the block in. The new scope will be
-      # used to contain the effects of a call to noop() inside that scope,
-      # and to cheat a little to change the inherited change_risk tag for
-      # only the resourced defined inside it, without requiring a new class.
-      newscope = scope.newscope(:source => scope, :resource => ResourceDelegator.new(scope.resource, risk))
       newscope.call_function('noop', true)
-      block.closure.call_by_name_with_scope(newscope, {}, false)
       'noop'
     end
   end
