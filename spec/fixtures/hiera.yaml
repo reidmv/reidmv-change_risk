@@ -2,5 +2,7 @@
 version: 5
 
 hierarchy:
-  - name: "Default"
-    path: "common.yaml"
+  - name: "Targeted data test"
+    path: "%{facts.hiera_path}.yaml"
+  - name: "Default - Arbiter data from facts.arbiter"
+    path: "arbiter.yaml"

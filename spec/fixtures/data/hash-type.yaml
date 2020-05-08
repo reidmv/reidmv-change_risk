@@ -1,0 +1,6 @@
+---
+change_risk::permitted_risk:
+  test:             true
+  block:            false
+  inner:            true
+  block_inner_diff: false

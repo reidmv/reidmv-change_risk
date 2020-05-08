@@ -1,0 +1,2 @@
+---
+change_risk::permitted_risk: "%{facts.arbiter.permitted_risk}"

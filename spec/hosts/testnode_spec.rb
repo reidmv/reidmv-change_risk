@@ -4,6 +4,12 @@ require 'spec_helper'
 require 'shared_examples'
 
 describe 'testnode' do
+  context 'when loading data from a hash-typed lookup' do
+    let(:facts) { { 'hiera_path' => 'hash-type' } }
+
+    it { is_expected.to compile }
+  end
+
   context 'when all changes are permitted' do
     permitted_risk = {
       'test'             => true,
@@ -12,9 +18,7 @@ describe 'testnode' do
       'block_inner_diff' => true,
     }
 
-    let(:facts) do
-      permitted_risk.reduce({}) { |memo,(k,v)| memo["permit_#{k}"] = v; memo }
-    end
+    let(:facts) { { 'arbiter' => { 'permitted_risk' => permitted_risk } } }
 
     it { is_expected.to compile }
 
@@ -30,9 +34,7 @@ describe 'testnode' do
       'block_inner_diff' => false,
     }
 
-    let(:facts) do
-      permitted_risk.reduce({}) { |memo,(k,v)| memo["permit_#{k}"] = v; memo }
-    end
+    let(:facts) { { 'arbiter' => { 'permitted_risk' => permitted_risk } } }
 
     it { is_expected.to compile }
 

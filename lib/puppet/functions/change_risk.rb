@@ -26,7 +26,7 @@ Puppet::Functions.create_function(:'change_risk', Puppet::Functions::InternalFun
     # If the user passed --no-noop on the command line, don't no-op.
     return true if (call_function('getvar', 'facts.noop_cli_value') == false)
 
-    permitted = call_function('getvar', "change_risk::permitted_risk.#{risk}") do |err|
+    permitted = call_function('getvar', "change_risk::permitted_risk_normalized.#{risk}") do |err|
       call_function('fail', "Risk permitted data unavailable for risk '#{risk}'")
     end
 
