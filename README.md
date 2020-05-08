@@ -126,7 +126,7 @@ change_risk::disable_mechanism: flag
 change_risk::respect_noop_class_interface: true
 ```
 
-Note that the only required parameter is `change_risk::permitted_risk`. The remaining parameters have acceptable defaults. For more information on each of these parameters and what they affect, see the [Reference](#reference) section.
+Note that the only required parameter is `change_risk::permitted_risk`. The remaining parameters have acceptable defaults. For more information on each of these parameters and what they affect, see the [reference](#change_risk_class) section.
 
 ### External data sources
 
@@ -201,7 +201,7 @@ puppet agent -t --no-noop --tags profile::postfix
 
 The `--no-noop` flag is available when using the orchestrator to perform Puppet agent runs remotely.
 
-The `--no-noop` flag can be used to disable permissible change checks when `change_risk::disable_mechanism` is set to "flag" or to "both".
+The `--no-noop` flag can be used to disable permissible change checks when [`change_risk::disable_mechanism`](#disable_mechanism) is set to "flag" or to "both".
 
 ### Facter Facts
 
@@ -213,7 +213,7 @@ Note that besides using a custom fact in the facts.d directory, facts can be set
 FACTER_ignore_permitted_risk=true puppet agent -t
 ```
 
-The `ignore_permitted_risk` Facter fact can be used to disable permissible change checks when `change_risk::disable_mechanism` is set to "fact" or to "both".
+The `ignore_permitted_risk` Facter fact can be used to disable permissible change checks when [`change_risk::disable_mechanism`](#disable_mechanism) is set to "fact" or to "both".
 
 ### Hiera Data
 
@@ -231,7 +231,7 @@ To override the class no-op setting for profile::postfix and force it to run in 
 profile::postfix::class_noop: false
 ```
 
-The noop class interface mechanism can be used on classes which support it when `change_risk::respect_noop_class_interface` is set to true (default).
+The noop class interface mechanism can be used on classes which support it when [`change_risk::respect_noop_class_interface`](#respect_noop_class_interface) is set to true (default).
 
 ## Examples
 
@@ -313,7 +313,52 @@ class profile::postfix (
 
 ### change\_risk Class
 
-A change\_risk class provides a way to configure the behavior of `change_risk()` function calls.
+The change\_risk class provides a way to configure the behavior of `change_risk()` function calls.
+
+#### permitted\_risk
+
+A hash of change risk values ("low", "medium", "high", etc.) to Booleans. True indicates the change risk is permissible, while false indicates the change risk is not permissible, and any resources marked with that change risk should be no-op'd.
+
+Example:
+
+```puppet
+{
+  'low'    => true,
+  'medium' => false,
+  'high'   => false,
+}
+```
+
+To support Hiera references to other variables, this parameter will also accept a String representation of a Puppet language Hash[String, Boolean].
+
+#### risk\_not\_found\_action
+
+Accepts one of the following values. These values define what Puppet will do if a `change_risk()` function call is evaluated which uses a risk that is not present in the permitted\_risk hash.
+
+* `fail` – Fail the catalog
+* `none` – Don't no-op the resources in the block
+* `noop` – No-op the resources in the block 
+
+#### ignore\_permitted\_risk
+
+When set to `true`, this effectively disables the ability for `change_risk()` to no-op resources. Defaults to `false`.
+
+#### disable\_mechanism
+
+Defines how to temporarily disable the ability for `change_risk()` to no-op resources. There are two possible configurations to disable `change_risk()` no-op behavior.
+
+* `flag` – Use the `--no-noop` flag on the command line
+* `fact` – Use `facts.ignore_permitted_risk=true` 
+* `both` – Use EITHER the `--no-noop` flag OR the value of `facts.ignore_permitted_risk`
+
+#### respect\_noop\_class\_interface
+
+This enables or disables compatability with trlinkin-noop's `noop::class_interface()` pattern. If set to `true` (default), then class parameters `$class_noop` and `$class_noop_override` can be used for individual classes which call `change_risk()` internally, and those parameters will take precedence over `change_risk()`'s determination of whether or not to no-op the class based on permitted risk.
+
+Setting `$class_noop` to True or False will switch over to `noop::class_interface()`'s semantics. Leave `$class_noop` undefined, or don't provide it on a class, to leave `change_risk()`'s semantics in effect.
+
+* `true` – Respect the values of `$class_noop` or `$class_noop_override`, if present
+* `false` – Ignore the values of `$class_noop` and `$class_noop_override`
 
 ### Change Risk Function
 
