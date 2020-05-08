@@ -103,6 +103,8 @@ Be aware that if resource **A** is a dependency of resource **B** and **A** is n
 
 Depending on your dependency chains this could cause problems, when, for example, Puppet cannot actually successfully configure resource **B** unless or until resource **A** is in-sync.
 
+Rule-of-thumb to avoid problems with this: don't depend on a higher-risk resource.
+
 ## Setup
 
 The behavior of the `change_risk()` function is controlled through a configuration class. The configuration can be set by providing the appropriate settings using Hiera data (preferred), or by declaring the class resource-style in site.pp (only recommended for testing purposes).
@@ -308,6 +310,8 @@ class profile::postfix (
   # ...
 }
 ```
+
+If a `$class_noop` Boolean value is provided, that value will be deterministic: full control will be passed over to `noop::class_interface()`, and permitted risk will be ignored. When `$class_noop` is undefined (set to `undef`), then `change_risk()` will behave normally and consult the permitted risk hash to decide whether or not to no-op the class.
 
 ## Reference
 

@@ -6,7 +6,7 @@ Puppet::Functions.create_function(:'change_risk', Puppet::Functions::InternalFun
   dispatch :class_function do
     scope_param
     param 'String', :risk
-    return_type 'Enum[op,noop]'
+    return_type 'Enum[op,noop,interface]'
   end
 
   dispatch :with_block do
@@ -23,25 +23,58 @@ Puppet::Functions.create_function(:'change_risk', Puppet::Functions::InternalFun
     # Ensure config is loaded
     call_function('include', 'change_risk')
 
-    # If the user passed --no-noop on the command line, don't no-op.
-    return true if (call_function('getvar', 'facts.noop_cli_value') == false)
+    permitted_risk = closure_scope.lookupvar('change_risk::permitted_risk_normalized')
+    risk_not_found_action = closure_scope.lookupvar('change_risk::risk_not_found_action')
+    permitted = closure_scope.lookupvar('change_risk::permitted_risk_normalized')[risk]
 
-    permitted = call_function('getvar', "change_risk::permitted_risk_normalized.#{risk}") do |err|
-      call_function('fail', "Risk permitted data unavailable for risk '#{risk}'")
+    case
+    when !permitted.nil?
+      return Puppet::Coercion.boolean(permitted)
+    when risk_not_found_action == 'fail'
+      call_function('fail', "Permitted risk data unavailable for risk '#{risk}'")
+    when risk_not_found_action == 'none'
+      return true
+    when risk_not_found_action == 'noop'
+      return false
     end
+  end
 
-    Puppet::Coercion.boolean(permitted)
+  def ignore_permitted?(risk)
+    return true if [true, 'true'].include?(closure_scope.lookupvar('change_risk::ignore_permitted_risk'))
+
+    disable_mechanism = closure_scope.lookupvar('change_risk::disable_mechanism')
+    flag_set = closure_scope.lookupvar('facts')['noop_cli_value'] == false
+    fact_set = [true, 'true'].include?(closure_scope.lookupvar('facts')['ignore_permitted_risk'])
+
+    case disable_mechanism
+    when 'flag'
+      flag_set
+    when 'fact'
+      fact_set
+    when 'both'
+      flag_set || fact_set
+    end
+  end
+
+  def eval_noop(scope, risk)
+    if change_permitted?(risk) || ignore_permitted?(risk)
+      'op'
+    else
+      scope.call_function('noop', true)
+      'noop'
+    end
   end
 
   def class_function(scope, risk)
     newtags = scope.resource.tags.delete_if { |t| t =~ /change_risk:/ }
     scope.resource.tags = newtags << "change_risk:#{risk}"
 
-    if change_permitted?(risk)
-      'op'
+    # Check if we're implementing noop::class_interface()
+    if scope.lookupvar('change_risk::respect_noop_class_interface') && !scope.get_local_variable('class_noop').nil?
+      scope.call_function('noop::class_interface', [])
+      'interface'
     else
-      scope.call_function('noop', true)
-      'noop'
+      eval_noop(scope, risk)
     end
   end
 
@@ -61,12 +94,7 @@ Puppet::Functions.create_function(:'change_risk', Puppet::Functions::InternalFun
     newscope = scope.newscope(:source => scope.source, :resource => resource)
     block.closure.call_by_name_with_scope(newscope, {}, false)
 
-    if change_permitted?(risk)
-      'op'
-    else
-      newscope.call_function('noop', true)
-      'noop'
-    end
+    eval_noop(newscope, risk)
   end
 
   class ResourceDelegator < SimpleDelegator
