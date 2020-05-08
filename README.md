@@ -20,7 +20,7 @@ change_risk::permitted_risk:
   unknown: true,
 ```
 
-_See [Configuration](#configuration) for more ways to to source this information._
+_See [setup](#setup) for more ways to to source this information._
 
 ### Use `change_risk()` in code
 
@@ -63,10 +63,12 @@ puppet query 'resources { certname = "my-node" and tags = "change_risk:high" }'
 
 ## Cautions
 
+### Scope considerations
+
 The `change_risk()` function relies on the [trlinkin-noop](https://forge.puppet.com/trlinkin/noop) module to implement its no-op directives when a change risk is not permitted. When using `change_risk()`, or indeed any variant of trlinkin-noop's `noop()` function, the following "rule-of-thumb" best practices should be applied.
 
 1. Don't call `change_risk()` inside a profile class unless you are using the block-form.
-2. <u>Strongly</u> prefer resource-style class delcaration over `include()` inside `change_risk()` classes or blocks.
+2. Inside `change_risk()` classes or blocks, <u>strongly</u> prefer resource-style class delcaration over `include()`.
 3. Don't declare "includable" classes (classes you expect to be included from multiple other places in code) inside a `change_risk()` class or block.
 
 _**Note:** for the purpose of these cautions, let `include()` refer equally to ANY of_
@@ -75,7 +77,7 @@ _**Note:** for the purpose of these cautions, let `include()` refer equally to A
 * _`require()`_
 * _`contain()`_
 
-### Explanation
+#### Explanation
 
 The root consideration that all of these cautions are drawn from is the behavior of Puppet's [scoping](https://puppet.com/docs/puppet/latest/lang_scope.html). Specifically, Puppet's [dynamic scoping](https://puppet.com/docs/puppet/latest/lang_scope.html#dynamic-scope), and how it affects class declaration. This is because the functional effects of `noop()` and the tagging effects of `change_risk()` propogate from parent scopes downwards into child scopes. 
 
@@ -90,10 +92,16 @@ Detailed breakdown for each rule-of-thumb element follows.
 
 1. _Don't call `change_risk()` inside a profile class unless you are using the block-form._  
    **Reasoning:** Profile classes are designed to be "includable", meaning it is expected that profiles should be safe to include from other profiles, potentially many times. Further, profile classes are expected to freely include other profiles. Because of this, the first place a profile class is included from is considered indeterminate and cannot be guaranteed. To avoid non-deterministic application of change-risk tagging, don't call the `change_risk()` class function directly inside a profile. Be more judicious and use the block form of `change_risk()` in profiles instead, and avoid using `include()` inside `change_risk()` blocks.
-2. _<u>Strongly</u> prefer resource-style class delcaration over `include()` inside `change_risk()` classes or blocks._  
+2. _Inside `change_risk()` classes or blocks, <u>strongly</u> prefer resource-style class delcaration over `include()`._  
     **Reasoning:** Resource-style class declaration has a desirable side-effect when we care deeply about what a class's parent scope will be: if the class's parent scope won't be the scope we declare it in (because it has been included somewhere else already), Puppet will raise a duplicate resource declaration error and fail the catalog. To help ensure deterministic scoping results for code inside `change_risk()` blocks, use resource-style class declaration whenever you can instead of `include()`, `require()` or `contain()`. Note that for contain specifically, it is safe to call `contain()` for a class right after declaring it, if you also need contain's special containment semantics to be applied.
 3. _Don't declare "includable" classes (classes you expect to be included from multiple other places in code) inside a `change_risk()` class or block._  
     **Reasoning:** as a corollary to the above point, if you would like to be able to `include()` a class elsewhere, you shouldn't declare it resource-style in your `change_risk()` block. If you find yourself at an impass struggling to adhere to rule-of-thumb points both 1 and 2 because they seem in conflict, it may be advisable to refactor your code—perhaps by creating a new, includable profile, which itself _can_ safely declare the class in question resource-style, in its own internal `change_risk()` block, after which the new profile can be included elsewhere.
+    
+### No-op and dependencies
+
+Be aware that if resource **A** is a dependency of resource **B** and **A** is no-op, Puppet will _always_ consider **B**'s dependency to be satisfied, even if resource **A** is detected to be out-of-sync. Because resource **A** is in no-op mode it cannot "fail", and so Puppet will never skip resource **B** due to a dependency failure.
+
+Depending on your dependency chains this could cause problems, when, for example, Puppet cannot actually successfully configure resource **B** unless or until resource **A** is in-sync.
 
 ## Setup
 
@@ -173,6 +181,58 @@ class { 'change_risk':
 }
 ```
 
+## Operation
+
+A normal Puppet agent run will use `change_risk::permitted_risk` information to automatically no-op classes and code blocks based on permitted risk. When performing manual Puppet agent runs, there are several mechanisms available to override the automatic no-op decisions.
+
+### Command-line Flags
+
+`change_risk()` can be configured to ignore permissible change risks and allow all changes when the `--no-noop` flag is passed to Puppet on the command line.
+
+```
+puppet agent -t --no-noop
+```
+
+The `--no-noop` flag may be combined with the `--tags` flag for a limited ability to target specific change. Note that the usual limitations and characteristics of the `--tags` flag apply.
+
+```
+puppet agent -t --no-noop --tags profile::postfix
+```
+
+The `--no-noop` flag is available when using the orchestrator to perform Puppet agent runs remotely.
+
+The `--no-noop` flag can be used to disable permissible change checks when `change_risk::disable_mechanism` is set to "flag" or to "both".
+
+### Facter Facts
+
+`change_risk()` can be configured to consult the value of a special fact to decide whether or not to respect permissible change risks: `ignore_permitted_risk`. If this fact is set to Boolean true or the string "true", then `change_risk()` will ignore permissible change risks and allow all change.
+
+Note that besides using a custom fact in the facts.d directory, facts can be set when running Puppet on the command line using environment variables. For example, to run Puppet once with `ignore_permitted_risk=true`, the following command can be used.
+
+```shell
+FACTER_ignore_permitted_risk=true puppet agent -t
+```
+
+The `ignore_permitted_risk` Facter fact can be used to disable permissible change checks when `change_risk::disable_mechanism` is set to "fact" or to "both".
+
+### Hiera Data
+
+If the `change_risk::ignore_permitted_risk` class parameter is set to `true` (either through class declaration or through Hiera data) then `change_risk()` will ignore permissible change risks and allow all change.
+
+```yaml
+change_risk::ignore_permitted_risk: true
+```
+
+If no-op class interface `$class_noop` parameters are being used, per-class hiera data may be set to override the main `change_risk()` check for any class so instrumented. Such an override will not, however, affect any nested change risk blocks inside the class.
+
+To override the class no-op setting for profile::postfix and force it to run in op mode, set the following Hiera data parameter:
+
+```yaml
+profile::postfix::class_noop: false
+```
+
+The noop class interface mechanism can be used on classes which support it when `change_risk::respect_noop_class_interface` is set to true (default).
+
 ## Examples
 
 ### In Combination
@@ -190,9 +250,8 @@ class profile::postfix (
   change_risk('low')
 
   # Normal configuration management code from this point forward
-  contain postfix::ldap
-  contain postfix::mta
-  contain postfix::satellite
+  
+  # ...
 
   # A block of high-risk changes
   change_risk('high') || {
@@ -249,40 +308,6 @@ class profile::postfix (
   # ...
 }
 ```
-
-## Operation
-
-A normal Puppet agent run will use `change_risk::permitted_risk` information to automatically no-op classes and code blocks based on permitted risk. When performing manual Puppet agent runs, there are several mechanisms available to override the automatic no-op decisions.
-
-### Hiera Data
-
-If no-op class interface `$class_noop` parameters are being used, per-class hiera data may be set to override the main `change_risk()` check for any class so instrumented. Such an override will not, however, affect any nested change risk blocks inside the class.
-
-To override the class no-op setting for profile::postfix and force it to run in op mode, set the following Hiera data parameter:
-
-```yaml
-profile::postfix::class_noop: false
-```
-
-### Command-line Flags
-
-A manual Puppet run with the `--no-noop` flag passed will bypass all `change_risk()` checks, such that all classes using the no-op class interface will be enforced, and all Arbiter risk-evaluation code blocks will be enforced, regardless of Arbiter's assessed risk tolerance level.
-
-The `--no-noop` flag is available when using the orchestrator to perform Puppet agent runs remotely.
-
-```
-puppet agent -t --no-noop
-```
-
-The `--no-noop` flag may be combined with the `--tags` flag for a limited ability to target specific change. Note that the usual limitations and characteristics of the `--tags` flag apply.
-
-```
-puppet agent -t --no-noop --tags profile::postfix
-```
-
-### Facter Facts
-
-To support use cases where running Puppet with `--no-noop` is not feasible, change\_risk can be configured to ignore the command-line flag and consult the value of a special fact instead: `ignore_change_risk`. If so configured, and if the `ignore_change_risk` fact is set to `true` or `"true"`, then `change_risk()` function calls will ignore permitted risk and allow all configuration to be applied.
 
 ## Reference
 
