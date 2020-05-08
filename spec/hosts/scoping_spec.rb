@@ -3,7 +3,7 @@
 require 'spec_helper'
 require 'shared_examples'
 
-describe 'testnode' do
+describe 'scoping' do
   context 'when loading data from a hash-typed lookup' do
     let(:facts) { { 'hiera_path' => 'hash-type' } }
 
