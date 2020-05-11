@@ -14,10 +14,10 @@ For testing or semi-permanent configuration, this can just be done in Hiera yaml
 
 ```yaml
 change_risk::permitted_risk:
-  high:    false,
-  medium:  true,
-  low:     true,
-  unknown: true,
+  high:    false
+  medium:  true
+  low:     true
+  unknown: true
 ```
 
 _See [setup](#setup) for more ways to to source this information._
@@ -117,10 +117,10 @@ In the example below the risk tolerance data shown is static, and does not chang
 
 ```yaml
 change_risk::permitted_risk:
-  high:    false,
-  medium:  true,
-  low:     true,
-  unknown: true,
+  high:    false
+  medium:  true
+  low:     true
+  unknown: true
 
 change_risk::risk_not_found_action: fail
 change_risk::ignore_permitted_risk: false
