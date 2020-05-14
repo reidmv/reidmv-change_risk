@@ -1,10 +1,12 @@
 {
   "name": "reidmv-change_risk",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "Reid Vandewiele",
-  "summary": "",
+  "summary": "Utility function to tag and optionally no-op sections of code based on assessed risk.",
   "license": "Apache-2.0",
-  "source": "",
+  "source": "https://github.com/reidmv/reidmv-change_risk.git",
+  "project_page": "https://github.com/reidmv/reidmv-change_risk",
+  "issues_url": "https://github.com/reidmv/reidmv-change_risk/issues",
   "dependencies": [
     {
       "name": "trlinkin/noop",
