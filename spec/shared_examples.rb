@@ -1,6 +1,6 @@
 RSpec.shared_examples 'a change_risk tagged resource' do |title:, risk:, type: 'notify'|
   res = "#{type.capitalize}[#{title}]"
-  it "#{res} should be tagged change_risk:#{risk}" do
+  it "#{res} is tagged change_risk:#{risk}" do
     expect(catalogue.resource(res).tagged?("change_risk:#{risk}")).to be(true)
   end
 end
@@ -14,8 +14,8 @@ RSpec.shared_examples 'a resource with noop value' do |title:, noop:, type: 'not
 end
 
 RSpec.shared_examples 'correct resource tagging' do
-  it 'should not tag any resources with more than one change_risk tag' do
-    expect(catalogue.resources.any? { |r| r.tags.select { |t| t =~ /change_risk:/ }.count > 1 }).to be(false)
+  it 'does not tag any resources with more than one change_risk tag' do
+    expect(catalogue.resources.any? { |r| r.tags.select { |t| t =~ %r{change_risk:} }.count > 1 }).to be(false)
   end
 
   describe 'resources in the test class' do
@@ -51,7 +51,7 @@ RSpec.shared_examples 'correct noop setting' do |permitted_risk:|
   # permitted == true,  noop == nil
   # permitted == true,  noop == nil
   # permitted == nil,   NOT TESTED FOR
-  noop_for = permitted_risk.reduce({}) { |memo,(k,v)| memo[k] = true if v == false; memo }
+  noop_for = permitted_risk.each_with_object({}) { |(k, v), memo| memo[k] = true if v == false; }
 
   describe 'the test class' do
     include_examples 'a resource with noop value', title: 'test-1', noop: noop_for['test']

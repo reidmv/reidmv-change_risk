@@ -1,14 +1,25 @@
+# rubocop:disable Style/Documentation
 # frozen_string_literal: true
+
 require 'delegate'
 require 'puppet/coercion'
 
-Puppet::Functions.create_function(:'change_risk', Puppet::Functions::InternalFunction) do
+Puppet::Functions.create_function(:change_risk, Puppet::Functions::InternalFunction) do
+  # @param risk The assessed risk to apply to the class.
+  # @return a string indicating which operative decision the function made.
+  # @example Calling the function.
+  #   change_risk('medium')
   dispatch :class_function do
     scope_param
     param 'String', :risk
     return_type 'Enum[op,noop,interface]'
   end
 
+  # @param risk The assessed risk to apply to a block of code.
+  # @yield a block of code the assessed risk applies to.
+  # @return a string indicating which operative decision the function made.
+  # @example Calling the function.
+  #   change_risk('medium') || { ... }
   dispatch :with_block do
     scope_param
     param 'String', :risk
@@ -23,23 +34,25 @@ Puppet::Functions.create_function(:'change_risk', Puppet::Functions::InternalFun
     # Ensure config is loaded
     call_function('include', 'change_risk')
 
-    permitted_risk = closure_scope.lookupvar('change_risk::permitted_risk_normalized')
     risk_not_found_action = closure_scope.lookupvar('change_risk::risk_not_found_action')
     permitted = closure_scope.lookupvar('change_risk::permitted_risk_normalized')[risk]
 
-    case
-    when !permitted.nil?
-      return Puppet::Coercion.boolean(permitted)
-    when risk_not_found_action == 'fail'
+    # If we have a valid directive, we can just return it
+    return permitted unless permitted.nil?
+
+    # No valid directive means we need to figure out a return value ourselves
+    if risk_not_found_action == 'none'
+      true
+    elsif risk_not_found_action == 'noop'
+      false
+    elsif risk_not_found_action == 'fail'
       call_function('fail', "Permitted risk data unavailable for risk '#{risk}'")
-    when risk_not_found_action == 'none'
-      return true
-    when risk_not_found_action == 'noop'
-      return false
+    else
+      raise "Unexpected value for change_risk::risk_not_found_action: #{risk_not_found_action}"
     end
   end
 
-  def ignore_permitted?(risk)
+  def ignore_permitted?(_risk)
     return true if [true, 'true'].include?(closure_scope.lookupvar('change_risk::ignore_permitted_risk'))
 
     disable_mechanism = closure_scope.lookupvar('change_risk::disable_mechanism')
@@ -66,7 +79,7 @@ Puppet::Functions.create_function(:'change_risk', Puppet::Functions::InternalFun
   end
 
   def class_function(scope, risk)
-    newtags = scope.resource.tags.delete_if { |t| t =~ /change_risk:/ }
+    newtags = scope.resource.tags.delete_if { |t| t =~ %r{change_risk:} }
     scope.resource.tags = newtags << "change_risk:#{risk}"
 
     # Check if we're implementing noop::class_interface()
@@ -91,7 +104,7 @@ Puppet::Functions.create_function(:'change_risk', Puppet::Functions::InternalFun
     # resource, thus getting what we want and avoiding the need to insert a
     # whole new class to contain the resources.
     resource = ResourceDelegator.new(scope.resource, risk)
-    newscope = scope.newscope(:source => scope.source, :resource => resource)
+    newscope = scope.newscope(source: scope.source, resource: resource)
     block.closure.call_by_name_with_scope(newscope, {}, false)
 
     eval_noop(newscope, risk)
@@ -104,7 +117,7 @@ Puppet::Functions.create_function(:'change_risk', Puppet::Functions::InternalFun
     end
 
     def tags
-      super.delete_if { |t| t =~ /change_risk:/ } << "change_risk:#{@risk}"
+      super.delete_if { |t| t =~ %r{change_risk:} } << "change_risk:#{@risk}"
     end
 
     def merge_into(tag_set)

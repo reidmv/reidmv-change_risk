@@ -3,21 +3,22 @@
 require 'spec_helper'
 
 describe 'disable-mechanism' do
-  let(:facts) {
+  let(:facts) do
     { 'arbiter' => { 'permitted_risk' => { 'test' => false } } }
-  }
+  end
 
   context 'disable_mechanism=flag' do
-    let(:pre_condition) {
+    let(:pre_condition) do
       <<-MANIFEST
         class { 'change_risk':
           disable_mechanism => 'flag',
         }
       MANIFEST
-    }
+    end
 
     describe '--no-noop flag passed' do
-      let (:facts) { super().merge({'noop_cli_value' => false}) }
+      let(:facts) { super().merge('noop_cli_value' => false) }
+
       it { is_expected.to contain_notify('test').without_noop }
     end
 
@@ -27,16 +28,17 @@ describe 'disable-mechanism' do
   end
 
   context 'disable_mechanism=fact' do
-    let(:pre_condition) {
+    let(:pre_condition) do
       <<-MANIFEST
         class { 'change_risk':
           disable_mechanism => 'fact',
         }
       MANIFEST
-    }
+    end
 
     describe 'ignore_permitted_risk fact set' do
-      let (:facts) { super().merge({'ignore_permitted_risk' => true}) }
+      let(:facts) { super().merge('ignore_permitted_risk' => true) }
+
       it { is_expected.to contain_notify('test').without_noop }
     end
 
