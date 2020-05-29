@@ -1,4 +1,7 @@
 class test {
+
+  $testvar = 'parent'
+
   change_risk('test')
 
   notify { 'test-1': }
@@ -6,6 +9,10 @@ class test {
   change_risk('block') || {
     notify { 'block-1': }
     notify { 'block-2': }
+
+    notify { 'testvar':
+      message => $testvar,
+    }
 
     test::type { 'block-type-1':
       message => 'block-type-1',

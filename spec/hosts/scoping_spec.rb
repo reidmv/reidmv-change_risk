@@ -4,6 +4,14 @@ require 'spec_helper'
 require 'shared_examples'
 
 describe 'scoping' do
+  context 'when evaluating a block' do
+    let(:facts) { { 'hiera_path' => 'hash-type' } }
+
+    it 'should have access to parent-scope variables' do
+      is_expected.to contain_notify('testvar').with_message('parent')
+    end
+  end
+
   context 'when loading data from a hash-typed lookup' do
     let(:facts) { { 'hiera_path' => 'hash-type' } }
 

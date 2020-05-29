@@ -105,6 +105,9 @@ Puppet::Functions.create_function(:change_risk, Puppet::Functions::InternalFunct
     # whole new class to contain the resources.
     resource = ResourceDelegator.new(scope.resource, risk)
     newscope = scope.newscope(source: scope.source, resource: resource)
+
+    # Ensure all variables from parent in newscope, then evaluate the block
+    scope.to_hash(false).each_pair { |k,v| newscope[k] = v }
     block.closure.call_by_name_with_scope(newscope, {}, false)
 
     eval_noop(newscope, risk)
