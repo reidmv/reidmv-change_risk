@@ -1,6 +1,6 @@
 {
   "name": "reidmv-change_risk",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "author": "Reid Vandewiele",
   "summary": "Utility function to tag and optionally no-op sections of code based on assessed risk.",
   "license": "Apache-2.0",
