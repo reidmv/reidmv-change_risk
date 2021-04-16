@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## Release 0.2.0
+
+**Improvements**
+
+* Added debug statements to change\_risk function
+
+**Bugfixes**
+
+* Fixed a `puppet apply` problem around trusted facts
+* Fixed a dependency documentation issue; change\_risk requires Puppet 6.4.5 or newer
+
 ## Release 0.1.4
 
 **Bugfixes**

@@ -35,7 +35,10 @@ Puppet::Functions.create_function(:change_risk, Puppet::Functions::InternalFunct
     call_function('include', 'change_risk')
 
     risk_not_found_action = closure_scope.lookupvar('change_risk::risk_not_found_action')
+    Puppet.debug { "change_risk(#{risk}): #{closure_scope.inspect}: risk_not_found_action=#{risk_not_found_action}" }
+
     permitted = closure_scope.lookupvar('change_risk::permitted_risk_normalized')[risk]
+    Puppet.debug { "change_risk(#{risk}): #{closure_scope.inspect}: permitted=#{permitted}" }
 
     # If we have a valid directive, we can just return it
     return permitted unless permitted.nil?
@@ -52,8 +55,11 @@ Puppet::Functions.create_function(:change_risk, Puppet::Functions::InternalFunct
     end
   end
 
-  def ignore_permitted?(_risk)
-    return true if [true, 'true'].include?(closure_scope.lookupvar('change_risk::ignore_permitted_risk'))
+  def ignore_permitted?(risk)
+    if [true, 'true'].include?(closure_scope.lookupvar('change_risk::ignore_permitted_risk'))
+      Puppet.debug { "change_risk(#{risk}): #{closure_scope.inspect}: ignore_permitted_risk=true" }
+      return true
+    end
 
     disable_mechanism = closure_scope.lookupvar('change_risk::disable_mechanism')
     flag_set = closure_scope.lookupvar('facts')['noop_cli_value'] == false
@@ -73,6 +79,7 @@ Puppet::Functions.create_function(:change_risk, Puppet::Functions::InternalFunct
     if change_permitted?(risk) || ignore_permitted?(risk)
       'op'
     else
+      Puppet.debug { "change_risk(#{risk}): #{closure_scope.inspect}: calling noop()" }
       scope.call_function('noop', true)
       'noop'
     end
@@ -107,7 +114,10 @@ Puppet::Functions.create_function(:change_risk, Puppet::Functions::InternalFunct
     newscope = scope.newscope(source: scope.source, resource: resource)
 
     # Ensure all variables from parent in newscope, then evaluate the block
-    scope.to_hash(false, true).each_pair { |k,v| newscope[k] = v }
+    scope.to_hash(false, true).each_pair do |k,v|
+      newscope[k] = v unless [Puppet::Parser::Scope::RESERVED_VARIABLE_NAMES,
+                              Puppet::Parser::Scope::VARNAME_SERVER_FACTS].flatten.include?(k)
+    end
     block.closure.call_by_name_with_scope(newscope, {}, false)
 
     eval_noop(newscope, risk)

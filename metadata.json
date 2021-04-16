@@ -1,6 +1,6 @@
 {
   "name": "reidmv-change_risk",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "author": "Reid Vandewiele",
   "summary": "Utility function to tag and optionally no-op sections of code based on assessed risk.",
   "license": "Apache-2.0",
@@ -85,7 +85,7 @@
   "requirements": [
     {
       "name": "puppet",
-      "version_requirement": ">= 4.10.0 < 7.0.0"
+      "version_requirement": ">= 6.4.5 < 8.0.0"
     }
   ],
   "pdk-version": "1.17.0",
