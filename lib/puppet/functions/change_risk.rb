@@ -35,10 +35,10 @@ Puppet::Functions.create_function(:change_risk, Puppet::Functions::InternalFunct
     call_function('include', 'change_risk')
 
     risk_not_found_action = closure_scope.lookupvar('change_risk::risk_not_found_action')
-    Puppet.debug { "change_risk(#{risk}): #{closure_scope.inspect}: risk_not_found_action=#{risk_not_found_action}" }
+    Puppet.debug { "change_risk(#{risk}): risk_not_found_action=#{risk_not_found_action}" }
 
     permitted = closure_scope.lookupvar('change_risk::permitted_risk_normalized')[risk]
-    Puppet.debug { "change_risk(#{risk}): #{closure_scope.inspect}: permitted=#{permitted}" }
+    Puppet.debug { "change_risk(#{risk}): permitted=#{permitted}" }
 
     # If we have a valid directive, we can just return it
     return permitted unless permitted.nil?
@@ -57,7 +57,7 @@ Puppet::Functions.create_function(:change_risk, Puppet::Functions::InternalFunct
 
   def ignore_permitted?(risk)
     if [true, 'true'].include?(closure_scope.lookupvar('change_risk::ignore_permitted_risk'))
-      Puppet.debug { "change_risk(#{risk}): #{closure_scope.inspect}: ignore_permitted_risk=true" }
+      Puppet.debug { "change_risk(#{risk}): ignore_permitted_risk=true" }
       return true
     end
 
@@ -76,10 +76,11 @@ Puppet::Functions.create_function(:change_risk, Puppet::Functions::InternalFunct
   end
 
   def eval_noop(scope, risk)
+    Puppet.debug { "change_risk(#{risk}): #{scope.inspect}: evaluating..." }
     if change_permitted?(risk) || ignore_permitted?(risk)
       'op'
     else
-      Puppet.debug { "change_risk(#{risk}): #{closure_scope.inspect}: calling noop()" }
+      Puppet.debug { "change_risk(#{risk}): #{scope.inspect}: calling noop()" }
       scope.call_function('noop', true)
       'noop'
     end
