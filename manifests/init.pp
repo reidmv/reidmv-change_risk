@@ -35,6 +35,6 @@ class change_risk (
   # properly typed Hash value.
   $permitted_risk_normalized = (type($permitted_risk) =~ Type[Hash]) ? {
     true  => $permitted_risk,
-    false => $permitted_risk.regsubst(/(['"])(\w+)\1 *=>/, '"\2":', 'G').parsejson,
+    false => $permitted_risk.regsubst(/(['"])([\w-]+)\1 *=>/, '"\2":', 'G').parsejson,
   }
 }
