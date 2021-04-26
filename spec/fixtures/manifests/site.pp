@@ -1,3 +1,32 @@
+node 'class' {
+  change_risk('not-permitted')
+  notify { '1-should-be-noop': }
+}
+
+node 'block' {
+  change_risk('not-permitted') || {
+    notify { '1-should-be-noop': }
+  }
+}
+
+node 'oscillating' {
+  change_risk('not-permitted') || {
+    notify { '1-should-be-noop': }
+
+    change_risk('permitted') || {
+      notify { '2-should-be-op': }
+
+      change_risk('not-permitted') || {
+        notify { '3-should-be-noop': }
+
+        change_risk('permitted') || {
+          notify { '4-should-be-op': }
+        }
+      }
+    }
+  }
+}
+
 node 'scoping' {
   include test
 }
