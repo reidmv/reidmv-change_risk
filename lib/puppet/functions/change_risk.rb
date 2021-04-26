@@ -119,9 +119,11 @@ Puppet::Functions.create_function(:change_risk, Puppet::Functions::InternalFunct
       newscope[k] = v unless [Puppet::Parser::Scope::RESERVED_VARIABLE_NAMES,
                               Puppet::Parser::Scope::VARNAME_SERVER_FACTS].flatten.include?(k)
     end
+    action = eval_noop(newscope, risk)
     block.closure.call_by_name_with_scope(newscope, {}, false)
 
-    eval_noop(newscope, risk)
+    # The block function return value is the determination of eval_noop()
+    action
   end
 
   class ResourceDelegator < SimpleDelegator
