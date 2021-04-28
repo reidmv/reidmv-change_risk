@@ -78,7 +78,7 @@ Puppet::Functions.create_function(:change_risk, Puppet::Functions::InternalFunct
   def previously_nooped(scope)
     return false if scope.nil?
     return true if scope.respond_to?(:noop_default)
-    previously_nooped(scope.enclosing_scope)
+    previously_nooped(scope.parent)
   end
 
   def eval_noop(scope, risk)
