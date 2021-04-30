@@ -75,7 +75,7 @@ Puppet::Functions.create_function(:change_risk, Puppet::Functions::InternalFunct
     end
   end
 
-  def previously_nooped(scope)
+  def previously_nooped?(scope)
     return false if scope.nil?
     return true if scope.respond_to?(:noop_default)
     previously_nooped(scope.parent)
@@ -84,21 +84,11 @@ Puppet::Functions.create_function(:change_risk, Puppet::Functions::InternalFunct
   def eval_noop(scope, risk)
     Puppet.debug { "change_risk(#{risk}): #{scope.inspect}: evaluating..." }
     if change_permitted?(risk) || ignore_permitted?(risk)
-      if previously_nooped(scope)
-        # TODO: replace with call_function('noop', nil) when noop 1.1.0 is released
-        scope.call_function('noop', false)
-        def scope.noop_default
-          nil
-        end
-      end
-
-      # Return that the determination has been made, "op"
+      scope.call_function('noop', nil) if previously_nooped?(scope)
       'op'
     else
       Puppet.debug { "change_risk(#{risk}): #{scope.inspect}: calling noop()" }
       scope.call_function('noop', true)
-
-      # Return that the determination has been made, "noop"
       'noop'
     end
   end
