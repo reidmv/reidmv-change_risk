@@ -13,9 +13,9 @@ describe 'oscillating' do
     let(:facts) { { 'arbiter' => { 'permitted_risk' => permitted_risk } } }
 
     it { is_expected.to compile }
-    it { is_expected.to contain_notify('1-should-be-noop').with_noop(true) }
-    it { is_expected.to contain_notify('2-should-be-op').without_noop }
-    it { is_expected.to contain_notify('3-should-be-noop').with_noop(true) }
-    it { is_expected.to contain_notify('4-should-be-op').without_noop }
+    it { is_expected.to contain_notify('1-should-be-op').without_noop }
+    it { is_expected.to contain_notify('2-should-be-noop').with_noop(true) }
+    it { is_expected.to contain_notify('3-should-be-op').without_noop }
+    it { is_expected.to contain_notify('4-should-be-noop').with_noop(true) }
   end
 end

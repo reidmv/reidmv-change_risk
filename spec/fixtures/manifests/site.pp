@@ -10,17 +10,17 @@ node 'block' {
 }
 
 node 'oscillating' {
-  change_risk('not-permitted') || {
-    notify { '1-should-be-noop': }
+  change_risk('permitted') || {
+    notify { '1-should-be-op': }
 
-    change_risk('permitted') || {
-      notify { '2-should-be-op': }
+    change_risk('not-permitted') || {
+      notify { '2-should-be-noop': }
 
-      change_risk('not-permitted') || {
-        notify { '3-should-be-noop': }
+      change_risk('permitted') || {
+        notify { '3-should-be-op': }
 
-        change_risk('permitted') || {
-          notify { '4-should-be-op': }
+        change_risk('not-permitted') || {
+          notify { '4-should-be-noop': }
         }
       }
     }
