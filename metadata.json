@@ -10,7 +10,7 @@
   "dependencies": [
     {
       "name": "trlinkin/noop",
-      "version_requirement": ">= 1.1.0 < 2.0.0"
+      "version_requirement": ">= 1.1.1 < 2.0.0"
     }
   ],
   "operatingsystem_support": [

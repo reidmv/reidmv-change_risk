@@ -3,5 +3,7 @@
 ---
 fixtures:
   forge_modules:
-    noop: "trlinkin/noop"
     stdlib: "puppetlabs/stdlib"
+    noop:
+      repo: "trlinkin/noop"
+      ref: "1.1.1"

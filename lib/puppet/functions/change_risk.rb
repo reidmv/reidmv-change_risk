@@ -78,13 +78,13 @@ Puppet::Functions.create_function(:change_risk, Puppet::Functions::InternalFunct
   def previously_nooped?(scope)
     return false if scope.nil?
     return true if scope.respond_to?(:noop_default)
-    previously_nooped(scope.parent)
+    previously_nooped?(scope.parent)
   end
 
   def eval_noop(scope, risk)
     Puppet.debug { "change_risk(#{risk}): #{scope.inspect}: evaluating..." }
     if change_permitted?(risk) || ignore_permitted?(risk)
-      scope.call_function('noop', nil) if previously_nooped?(scope)
+      scope.call_function('noop', :undef) if previously_nooped?(scope)
       'op'
     else
       Puppet.debug { "change_risk(#{risk}): #{scope.inspect}: calling noop()" }
