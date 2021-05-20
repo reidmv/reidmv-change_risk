@@ -7,7 +7,7 @@ describe 'scoping' do
   context 'when evaluating a block' do
     let(:facts) { { 'hiera_path' => 'hash-type' } }
 
-    it 'should have access to parent-scope variables' do
+    it 'has access to parent-scope variables' do
       is_expected.to contain_notify('testvar').with_message('parent')
     end
   end

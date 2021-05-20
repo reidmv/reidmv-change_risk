@@ -15,7 +15,7 @@ end
 
 RSpec.shared_examples 'correct resource tagging' do
   it 'does not tag any resources with more than one change_risk tag' do
-    expect(catalogue.resources.any? { |r| r.tags.select { |t| t =~ %r{change_risk:} }.count > 1 }).to be(false)
+    expect(catalogue.resources.any? { |r| (r.tags.count { |t| t =~ %r{^change_risk:} }) > 1 }).to be(false)
   end
 
   describe 'resources in the test class' do

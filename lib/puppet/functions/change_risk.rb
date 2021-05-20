@@ -94,7 +94,7 @@ Puppet::Functions.create_function(:change_risk, Puppet::Functions::InternalFunct
   end
 
   def class_function(scope, risk)
-    newtags = scope.resource.tags.delete_if { |t| t =~ %r{change_risk:} }
+    newtags = scope.resource.tags.delete_if { |t| t =~ %r{^change_risk:} }
     scope.resource.tags = newtags << "change_risk:#{risk}"
 
     # Check if we're implementing noop::class_interface()
@@ -122,9 +122,9 @@ Puppet::Functions.create_function(:change_risk, Puppet::Functions::InternalFunct
     newscope = scope.newscope(source: scope.source, resource: resource)
 
     # Ensure all variables from parent in newscope, then evaluate the block
-    scope.to_hash(false, true).each_pair do |k,v|
-      newscope[k] = v unless [Puppet::Parser::Scope::RESERVED_VARIABLE_NAMES,
-                              Puppet::Parser::Scope::VARNAME_SERVER_FACTS].flatten.include?(k)
+    scope.to_hash(false, true).each_pair do |key, val|
+      newscope[key] = val unless [Puppet::Parser::Scope::RESERVED_VARIABLE_NAMES,
+                                  Puppet::Parser::Scope::VARNAME_SERVER_FACTS].flatten.include?(key)
     end
     action = eval_noop(newscope, risk)
     block.closure.call_by_name_with_scope(newscope, {}, false)
@@ -140,7 +140,7 @@ Puppet::Functions.create_function(:change_risk, Puppet::Functions::InternalFunct
     end
 
     def tags
-      super.delete_if { |t| t =~ %r{change_risk:} } << "change_risk:#{@risk}"
+      super.delete_if { |t| t =~ %r{^change_risk:} } << "change_risk:#{@risk}"
     end
 
     def merge_into(tag_set)

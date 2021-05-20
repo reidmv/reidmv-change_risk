@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 **Features**
 
-* Added support for oscillating between different risk levels inside nested scopes
+* Added support for lowering risk level and restoring op-mode to resources inside nested scopes.
 
 **Improvements**
 
