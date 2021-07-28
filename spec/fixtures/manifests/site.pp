@@ -40,3 +40,5 @@ node 'disable-mechanism' {
   change_risk('test')
   notify { 'test': }
 }
+
+node default { }
