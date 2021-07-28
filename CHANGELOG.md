@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## Release 0.2.1
+
+**Bugfixes**
+
+* A stringified empty hash is now considered valid for `change_risk::permitted_risk`
+
 ## Release 0.2.0
 
 **Features**
